@@ -94,6 +94,17 @@ the message object *as read back out of* `messages.value` after pushing, not the
 object reference from before the push, or Vue's reactivity won't see the incremental
 updates.
 
+**Chat history (2026-08-27):** persisted to `localStorage` (`llm-in-a-box-chat` key),
+plus Export (downloads a plain-text transcript) and Clear buttons. Persistence writes
+happen at message boundaries (after the user's message, and again once a streamed
+answer finishes), not on every token — a deep watch would fire a synchronous
+localStorage write per token during streaming, which is real jank for no benefit.
+Verified in an actual browser via Puppeteer: history survives a full page reload (not
+just SPA in-memory state), Export produces a correctly formatted transcript, Clear
+empties state/localStorage and disables both buttons. Deliberately did **not** add
+multi-conversation management (named threads, a switcher UI) — one persisted
+conversation covers the actual use case; that would be scope the tool doesn't need.
+
 **Not yet done:**
 - No reranking / dedup of retrieved chunks, no multi-turn conversation history sent to
   the model (each question is answered independently).
