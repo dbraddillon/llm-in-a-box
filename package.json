@@ -1,0 +1,14 @@
+{
+  "name": "llm-in-a-box",
+  "private": true,
+  "workspaces": [
+    "scripts/node",
+    "runtime/server",
+    "runtime/chat-ui",
+    "builder"
+  ],
+  "scripts": {
+    "gen-manifest": "node scripts/node/gen-manifest.mjs",
+    "wizard": "npm run dev --workspace=builder"
+  }
+}

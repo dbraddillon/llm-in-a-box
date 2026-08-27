@@ -1,0 +1,12 @@
+id: survival-sample
+label: "Sample Pack (pipeline smoke test)"
+description: >
+  Tiny placeholder content used to exercise the fetch -> chunk -> embed pipeline
+  end to end. Generic, non-authoritative -- swap for a real pack before loading a
+  drive you intend to actually use.
+sources:
+  - type: local
+    path: ./fixtures
+chunk:
+  max_chars: 1200
+  overlap_chars: 160

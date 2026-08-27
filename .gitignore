@@ -1,0 +1,14 @@
+build/
+models/cache/
+out/
+node_modules/
+runtime/chat-ui/dist/
+builder/dist/
+
+.vs/
+.vscode/
+*.user
+.DS_Store
+Thumbs.db
+*.log
+*.stackdump

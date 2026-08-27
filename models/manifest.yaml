@@ -1,0 +1,35 @@
+# Curated small chat models suitable for CPU-only offline inference.
+#
+# NOTE: the repo/file values below are best-effort pointers to well-known GGUF
+# quantizations on Hugging Face -- verify the exact repo/filename still exists
+# before running fetch-model.ps1 for real; authors sometimes rename or re-quantize.
+# sha256 is intentionally blank; fetch-model.ps1 warns instead of failing when it's
+# missing, and you can pin it in here once you've downloaded and trust a copy.
+
+models:
+  - id: qwen2.5-3b-instruct-q4
+    label: "Qwen2.5 3B Instruct (Q4_K_M)"
+    repo: Qwen/Qwen2.5-3B-Instruct-GGUF
+    file: qwen2.5-3b-instruct-q4_k_m.gguf
+    approx_size_gb: 2.1
+    min_ram_gb: 4
+    sha256: ""
+    notes: Good default. Small, fast, Apache-2.0 licensed.
+
+  - id: llama-3.2-3b-instruct-q4
+    label: "Llama 3.2 3B Instruct (Q4_K_M)"
+    repo: bartowski/Llama-3.2-3B-Instruct-GGUF
+    file: Llama-3.2-3B-Instruct-Q4_K_M.gguf
+    approx_size_gb: 2.0
+    min_ram_gb: 4
+    sha256: ""
+    notes: Similar tier to Qwen2.5-3B, Llama community license.
+
+  - id: phi-3.5-mini-instruct-q4
+    label: "Phi-3.5 Mini Instruct (Q4_K_M)"
+    repo: bartowski/Phi-3.5-mini-instruct-GGUF
+    file: Phi-3.5-mini-instruct-Q4_K_M.gguf
+    approx_size_gb: 2.2
+    min_ram_gb: 4
+    sha256: ""
+    notes: Strong reasoning for its size, MIT licensed.

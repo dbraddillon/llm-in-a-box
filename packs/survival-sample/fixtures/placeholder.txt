@@ -1,0 +1,17 @@
+This is placeholder fixture content for testing the llm-in-a-box build pipeline.
+It is not vetted reference material -- replace this pack with real content before
+loading a drive you intend to actually rely on.
+
+Basic wound care: clean the area with water, apply direct pressure to stop
+bleeding, and cover with a clean dressing. Seek professional medical care when
+available.
+
+Water purification: boiling water for at least one minute kills most pathogens.
+At altitudes above 6,500 feet, boil for three minutes instead.
+
+Shelter priority order commonly taught for survival situations: protection from
+the elements first, then signaling for rescue, then water, then fire, then food.
+
+Layering for cold weather: a moisture-wicking base layer, an insulating mid
+layer, and a wind/water resistant outer shell. Avoid cotton next to skin in cold,
+wet conditions since it loses insulating value when damp.
