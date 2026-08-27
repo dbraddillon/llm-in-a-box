@@ -23,6 +23,7 @@ function runStream(url) {
 function fetchContent(pack) { runStream(`/api/run/fetch-content?pack=${pack}`); }
 function buildPack(pack) { runStream(`/api/run/build-pack?pack=${pack}`); }
 function fetchModel(model) { runStream(`/api/run/fetch-model?model=${model}`); }
+function fetchRuntime() { runStream('/api/run/fetch-runtime'); }
 
 onMounted(loadManifest);
 </script>
@@ -39,6 +40,13 @@ onMounted(loadManifest);
         <button @click="fetchContent(p.dir)">Fetch content</button>
         <button @click="buildPack(p.dir)">Build index</button>
       </div>
+    </section>
+
+    <section>
+      <h2>Runtime</h2>
+      <p>llama-server binary for this dev machine's platform (auto-detected). Only needs
+        fetching once; re-fetch after a while to pick up a newer llama.cpp build.</p>
+      <button @click="fetchRuntime">Fetch llama-server</button>
     </section>
 
     <section>

@@ -40,7 +40,10 @@ node ./scripts/node/gen-manifest.mjs
 # download a model from models/manifest.yaml into models/cache/
 ./scripts/fetch-model.ps1 -Model qwen2.5-3b-instruct-q4
 
-# assemble runtime + chosen packs + chosen model into one folder
+# download llama-server for this machine's platform (auto-detected) into runtime-bin/
+./scripts/fetch-runtime.ps1
+
+# assemble runtime + chosen packs + chosen model + platform runtime binary into one folder
 ./scripts/load-drive.ps1 -Packs survival-sample -Model qwen2.5-3b-instruct-q4 -Output ./out/box
 
 # zip that folder for handing off to another machine
@@ -55,7 +58,9 @@ cd builder; npm run dev
 
 ## Status
 
-Scaffold. The fetch/chunk/embed pipeline and the wizard's pack/model listing are real
-and have been run end to end. The runtime chat server proxies to a `llama-server`
-binary that isn't fetched/bundled anywhere yet. Full breakdown of real vs. stubbed in
-`docs/01-architecture.md`.
+Full pipeline verified end to end 2026-08-27: real content (incl. PDF/HTML) fetched,
+chunked, embedded; a real `llama-server` binary and a real model fetched; a box
+assembled and run from a path completely outside the repo, answering a real question
+correctly with source attribution. See `docs/01-architecture.md` for exactly what's
+been tested vs. what's still missing (streaming responses, reranking, etc.), and
+`docs/content-sourcing.md` before pointing a pack at content you don't have rights to.

@@ -9,6 +9,8 @@ import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
 import { pipeline } from '@xenova/transformers';
+import pdfParse from 'pdf-parse';
+import { parse as parseHTML } from 'node-html-parser';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const packId = process.argv[2];
@@ -38,14 +40,36 @@ if (!existsSync(rawDir)) {
 const MAX_CHARS = pack.chunk?.max_chars ?? 1200;
 const OVERLAP = pack.chunk?.overlap_chars ?? 160;
 
+const EXTRACTABLE = ['.txt', '.md', '.pdf', '.html', '.htm'];
+
 function walk(dir) {
   let out = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, entry.name);
     if (entry.isDirectory()) out = out.concat(walk(p));
-    else if (entry.name.endsWith('.txt') || entry.name.endsWith('.md')) out.push(p);
+    else if (EXTRACTABLE.some((ext) => entry.name.toLowerCase().endsWith(ext))) out.push(p);
   }
   return out;
+}
+
+// PDF via pdf-parse (pdf.js under the hood) and HTML via node-html-parser (tag-strip,
+// not a full Readability-style boilerplate remover -- fine for a single article/page,
+// noisier for a full nav-heavy site scrape).
+async function extractText(file) {
+  const lower = file.toLowerCase();
+  if (lower.endsWith('.pdf')) {
+    const { text } = await pdfParse(readFileSync(file));
+    return text;
+  }
+  if (lower.endsWith('.html') || lower.endsWith('.htm')) {
+    const root = parseHTML(readFileSync(file, 'utf8'));
+    root.querySelectorAll('script, style, nav, header, footer').forEach((el) => el.remove());
+    // textContent on the whole doc picks up <!doctype> and <title>/<head> text --
+    // scope to <body> so only visible page content makes it into the pack.
+    const body = root.querySelector('body');
+    return (body ?? root).textContent;
+  }
+  return readFileSync(file, 'utf8');
 }
 
 function chunkText(text) {
@@ -81,7 +105,7 @@ const insert = db.prepare('INSERT INTO chunks (source, text, embedding) VALUES (
 const files = walk(rawDir);
 let total = 0;
 for (const file of files) {
-  const text = readFileSync(file, 'utf8');
+  const text = await extractText(file);
   const source = relative(rawDir, file);
   for (const chunk of chunkText(text)) {
     const output = await embed(chunk, { pooling: 'mean', normalize: true });

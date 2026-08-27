@@ -1,8 +1,9 @@
 # Curated small chat models suitable for CPU-only offline inference.
 #
-# NOTE: the repo/file values below are best-effort pointers to well-known GGUF
-# quantizations on Hugging Face -- verify the exact repo/filename still exists
-# before running fetch-model.ps1 for real; authors sometimes rename or re-quantize.
+# All three repo/file URLs below were HEAD-verified live on 2026-08-27 (HTTP 200).
+# qwen2.5-3b-instruct-q4 was fetched for real and used for a full end-to-end chat
+# test. Authors can still rename/re-quantize later, so if fetch-model.ps1 404s,
+# check the repo on huggingface.co and update the entry.
 # sha256 is intentionally blank; fetch-model.ps1 warns instead of failing when it's
 # missing, and you can pin it in here once you've downloaded and trust a copy.
 

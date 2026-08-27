@@ -30,8 +30,11 @@ Checklist for Claude (or a human) picking this repo up on a new machine.
 - [ ] `sudo apt install -y powershell` (or the snap package) for `pwsh`
 - [ ] Same prebuilt-binary note as macOS applies for linux-x64.
 
-## Not yet portable
-- No `llama-server` binary is bundled per-platform yet (see
-  `01-architecture.md` → "what's stubbed"). Until that exists, `load-drive.ps1`
-  output isn't runnable end to end on any platform — only the retrieval/index half
-  is real.
+## Cross-platform status
+`fetch-runtime.ps1` and `load-drive.ps1` auto-detect the current platform
+(`Get-CurrentPlatform` in `_common.ps1`) and fetch/bundle the matching `llama-server`
+build from `ggml-org/llama.cpp`'s releases (win-x64, win-arm64, macos-arm64, macos-x64,
+linux-x64, linux-arm64). Verified for real on win-x64 only so far (full assemble +
+launch + real chat question, from a path outside the repo). mac/Linux should work
+unmodified per the platform table but haven't been run yet — if you're the first to
+try one, that's the thing to confirm.

@@ -1,9 +1,13 @@
 param(
   [Parameter(Mandatory)][string[]]$Packs,
   [Parameter(Mandatory)][string]$Model,
-  [Parameter(Mandatory)][string]$Output
+  [Parameter(Mandatory)][string]$Output,
+  [ValidateSet('win-x64', 'win-arm64', 'macos-arm64', 'macos-x64', 'linux-x64', 'linux-arm64')]
+  [string]$Platform
 )
 . "$PSScriptRoot/_common.ps1"
+
+if (-not $Platform) { $Platform = Get-CurrentPlatform }
 
 node "$Root/scripts/node/gen-manifest.mjs" | Out-Null
 $manifest = Get-Content "$Root/build/manifest.generated.json" -Raw | ConvertFrom-Json
@@ -16,7 +20,13 @@ if (Test-Path $Output) { Remove-Item $Output -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $Output | Out-Null
 
 Write-Host "copying runtime..."
-Copy-Item "$Root/runtime/server" "$Output/server" -Recurse
+Copy-Item "$Root/runtime/server" "$Output/server" -Recurse -Exclude node_modules
+# runtime/server's deps are hoisted into the repo root's node_modules by npm workspaces
+# during dev -- that root won't exist wherever this output folder ends up, so give the
+# output its own standalone install rather than relying on Node's upward module lookup.
+Write-Host "installing runtime server deps into output (standalone, not a workspace)..."
+Push-Location "$Output/server"
+try { npm install --omit=dev --no-audit --no-fund | Out-Null } finally { Pop-Location }
 if (Test-Path "$Root/runtime/chat-ui/dist") {
   Copy-Item "$Root/runtime/chat-ui/dist" "$Output/chat-ui/dist" -Recurse
 } else {
@@ -37,12 +47,22 @@ New-Item -ItemType Directory -Force -Path "$Output/model" | Out-Null
 Copy-Item $modelFile "$Output/model/model.gguf"
 
 New-Item -ItemType Directory -Force -Path "$Output/bin" | Out-Null
-Write-Host "NOTE: no llama-server binary bundled yet -- copy one into $Output/bin/ (see docs/01-architecture.md)"
+$binName = if ($Platform -like 'win-*') { 'llama-server.exe' } else { 'llama-server' }
+$binCacheDir = Join-Path $Root "runtime-bin/$Platform"
+if (Test-Path (Join-Path $binCacheDir $binName)) {
+  # llama-server depends on sibling DLLs (ggml-cpu-*, llama-server-impl, mtmd, ...) --
+  # copy the whole cached directory, not just the exe, or it fails to start.
+  Copy-Item (Join-Path $binCacheDir '*') "$Output/bin" -Recurse -Force
+  Write-Host "bundled llama-server for $Platform"
+} else {
+  Write-Warning "no llama-server cached for $Platform -- run ./scripts/fetch-runtime.ps1 -Platform $Platform first"
+}
 
 $stamp = @{
-  builtAt = (Get-Date).ToString('o')
-  packs   = $Packs
-  model   = $Model
+  builtAt  = (Get-Date).ToString('o')
+  packs    = $Packs
+  model    = $Model
+  platform = $Platform
 } | ConvertTo-Json
 Set-Content -Path "$Output/manifest.json" -Value $stamp
 

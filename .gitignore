@@ -1,5 +1,6 @@
 build/
 models/cache/
+runtime-bin/
 out/
 node_modules/
 runtime/chat-ui/dist/

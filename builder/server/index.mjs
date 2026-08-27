@@ -56,6 +56,10 @@ app.get('/api/manifest', (_req, res) => {
 app.get('/api/run/fetch-content', (req, res) => runScript('fetch-content.ps1', ['-Pack', req.query.pack], res));
 app.get('/api/run/build-pack', (req, res) => runScript('build-pack.ps1', ['-Pack', req.query.pack], res));
 app.get('/api/run/fetch-model', (req, res) => runScript('fetch-model.ps1', ['-Model', req.query.model], res));
+app.get('/api/run/fetch-runtime', (req, res) => {
+  const args = req.query.platform ? ['-Platform', req.query.platform] : [];
+  runScript('fetch-runtime.ps1', args, res);
+});
 
 const port = process.env.BUILDER_PORT ?? 7861;
 app.listen(port, () => console.log(`builder API on http://127.0.0.1:${port}`));
