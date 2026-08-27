@@ -40,23 +40,50 @@ app.post('/api/chat', async (req, res) => {
     { role: 'user', content: `Context:\n${context}\n\nQuestion: ${message}` },
   ];
 
+  let llamaRes;
   try {
-    const llamaRes = await fetch(`${LLAMA_SERVER_URL}/v1/chat/completions`, {
+    llamaRes = await fetch(`${LLAMA_SERVER_URL}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ messages: prompt, stream: false }),
-    });
-    if (!llamaRes.ok) {
-      return res.status(502).json({ error: `llama-server error (${llamaRes.status})` });
-    }
-    const data = await llamaRes.json();
-    res.json({
-      answer: data.choices?.[0]?.message?.content ?? '(no answer)',
-      sources: hits.map((h) => h.source),
+      body: JSON.stringify({ messages: prompt, stream: true }),
     });
   } catch (err) {
-    res.status(502).json({ error: `could not reach llama-server at ${LLAMA_SERVER_URL}: ${err.message}` });
+    return res.status(502).json({ error: `could not reach llama-server at ${LLAMA_SERVER_URL}: ${err.message}` });
   }
+  if (!llamaRes.ok || !llamaRes.body) {
+    return res.status(502).json({ error: `llama-server error (${llamaRes.status})` });
+  }
+
+  // Sources are known before the model starts generating -- carry them in a header so
+  // the body can just be raw answer text, streamed straight through as it's produced.
+  res.writeHead(200, {
+    'content-type': 'text/plain; charset=utf-8',
+    'x-sources': encodeURIComponent(JSON.stringify(hits.map((h) => h.source))),
+  });
+
+  const reader = llamaRes.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split('\n\n');
+    buffer = events.pop(); // last element may be a not-yet-complete event
+    for (const event of events) {
+      const dataLine = event.split('\n').find((l) => l.startsWith('data:'));
+      if (!dataLine) continue;
+      const payload = dataLine.slice(5).trim();
+      if (payload === '[DONE]') continue;
+      try {
+        const delta = JSON.parse(payload).choices?.[0]?.delta?.content;
+        if (delta) res.write(delta);
+      } catch {
+        // partial/malformed SSE frame -- skip rather than crash the stream
+      }
+    }
+  }
+  res.end();
 });
 
 const port = process.env.PORT ?? 7860;

@@ -11,20 +11,39 @@ async function send() {
   messages.value.push({ role: 'user', text });
   input.value = '';
   sending.value = true;
+
+  // Grab the item back out of the reactive array rather than keeping the plain object
+  // we just pushed -- mutating the raw object directly wouldn't trigger re-renders,
+  // since Vue's reactivity tracks access through the array's proxy, not the object
+  // reference we happened to create it with.
+  messages.value.push({ role: 'assistant', text: '', sources: [] });
+  const assistantMsg = messages.value[messages.value.length - 1];
+
   try {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ message: text }),
     });
-    const data = await res.json();
-    messages.value.push({
-      role: 'assistant',
-      text: data.answer ?? data.error ?? '(no response)',
-      sources: data.sources ?? [],
-    });
+
+    if (!res.ok || !res.body) {
+      const data = await res.json().catch(() => ({}));
+      assistantMsg.text = data.error ?? `Error: HTTP ${res.status}`;
+      return;
+    }
+
+    const sourcesHeader = res.headers.get('x-sources');
+    if (sourcesHeader) assistantMsg.sources = JSON.parse(decodeURIComponent(sourcesHeader));
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      assistantMsg.text += decoder.decode(value, { stream: true });
+    }
   } catch (err) {
-    messages.value.push({ role: 'assistant', text: `Error: ${err.message}`, sources: [] });
+    assistantMsg.text = `Error: ${err.message}`;
   } finally {
     sending.value = false;
   }

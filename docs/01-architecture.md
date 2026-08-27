@@ -84,8 +84,17 @@ something similar breaks again:**
    `load-drive.ps1` now runs a standalone `npm install --omit=dev` inside the output's
    `server/` folder so it carries its own `node_modules`.
 
+**Streaming responses (2026-08-27):** `/api/chat` now proxies `llama-server`'s SSE
+stream token-by-token instead of buffering the full completion — verified for real
+with a timestamped chunk log (70 chunks over ~7.8s, arriving at generation pace, not
+one dump at the end). Sources travel in an `x-sources` response header (URL-encoded
+JSON) since the body is now plain streamed text, not a JSON envelope. Client side
+(`App.vue`) reads via `response.body.getReader()`; note the fix needed there — mutate
+the message object *as read back out of* `messages.value` after pushing, not the plain
+object reference from before the push, or Vue's reactivity won't see the incremental
+updates.
+
 **Not yet done:**
-- No streaming in the chat UI — responses come back all at once, not token by token.
 - No reranking / dedup of retrieved chunks, no multi-turn conversation history sent to
   the model (each question is answered independently).
 - HTML extraction is a tag-stripper, not a Readability-style extractor — will include
