@@ -142,9 +142,22 @@ loaded pack is the smoke-test fixture, not real content). Mobile drawer breakpoi
 (`768px`) still isn't visually confirmed — the sandboxed browser wouldn't resize below
 its host window size — but it's a standard `translateX` drawer pattern.
 
+**Multi-turn conversation (2026-08-28):** `/api/chat` now accepts a `history` array
+(prior `{role, text}` turns, sent by the client from its own `messages` state) and
+folds it into the prompt as plain dialogue, ahead of the current
+Context+Question-wrapped turn. Capped at the last 16 turns. Prior turns are sent as
+plain text, **not** re-wrapped with their original retrieved context — that context
+was only needed once, to ground the answer when it was first given; resending it
+every turn would bloat the prompt for no benefit. Verified for real: asked it to
+remember an arbitrary fact ("My name is Zorblatt") in turn one, then asked "what's my
+name?" in turn two with no matching content in the retrieved chunks — it answered
+correctly from history alone. Note: a 3B quantized model isn't perfectly reliable at
+this on every sample (one early test with the identical prompt shape failed, a retry
+succeeded) — the mechanism works, but don't expect research-grade reliability out of
+a model this size.
+
 **Not yet done:**
-- No reranking / dedup of retrieved chunks, no multi-turn conversation history sent to
-  the model (each question is answered independently).
+- No reranking / dedup of retrieved chunks.
 - HTML extraction is a tag-stripper, not a Readability-style extractor — will include
   boilerplate (sidebars, related-links blocks, etc.) that isn't inside the excluded
   tags on more complex real-world pages than the test fixture.

@@ -27,16 +27,31 @@ app.use(express.static(staticDir));
 app.get('/api/health', (_req, res) => res.json({ ok: true, chunks: chunks.length }));
 
 app.post('/api/chat', async (req, res) => {
-  const { message } = req.body;
+  const { message, history } = req.body;
   if (!message) return res.status(400).json({ error: 'message required' });
 
   const hits = await search(chunks, message, 5);
   const context = hits.map((h) => `[${h.source}] ${h.text}`).join('\n\n');
+
+  // Prior turns carried as plain dialogue (no re-injected context blocks -- those
+  // were already grounded when first answered, re-sending them every turn would
+  // bloat the prompt for no benefit). Capped so a long-running conversation can't
+  // grow the prompt unbounded.
+  const priorTurns = Array.isArray(history)
+    ? history
+        .filter((m) => m && !m.error && (m.role === 'user' || m.role === 'assistant') && m.text?.trim())
+        .slice(-16)
+        .map((m) => ({ role: m.role, content: m.text }))
+    : [];
+
   const prompt = [
     {
       role: 'system',
-      content: 'Answer only from the provided context. If the context does not cover the question, say so.',
+      content:
+        'Answer only from the provided context and the earlier turns of this conversation. ' +
+        'If neither covers the question, say so.',
     },
+    ...priorTurns,
     { role: 'user', content: `Context:\n${context}\n\nQuestion: ${message}` },
   ];
 

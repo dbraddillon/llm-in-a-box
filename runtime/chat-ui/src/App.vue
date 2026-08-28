@@ -84,6 +84,9 @@ function scrollToBottom() {
 async function send() {
   const text = input.value.trim();
   if (!text || sending.value) return;
+  // Snapshot before pushing the new user turn, so it's exactly "everything said
+  // before this question" -- the server folds it into the prompt as prior dialogue.
+  const history = messages.value.map((m) => ({ role: m.role, text: m.text, error: m.error }));
   messages.value.push({ role: 'user', text });
   input.value = '';
   sending.value = true;
@@ -102,7 +105,7 @@ async function send() {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ message: text }),
+      body: JSON.stringify({ message: text, history }),
     });
 
     if (!res.ok || !res.body) {
