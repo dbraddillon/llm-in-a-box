@@ -59,9 +59,23 @@ ggml-org/llama.cpp releases --fetch-runtime--> runtime-bin/<platform>/
 - `fetch-runtime.ps1` — fetched a real `llama-server` (win-x64, build b10664) from the
   live `ggml-org/llama.cpp` release feed and confirmed it runs (`--version`).
 - `load-drive.ps1`, `verify-drive.ps1`, `package-output.ps1`.
-- **Full end-to-end chat**, assembled box run from a path completely outside the repo
-  (proving it's actually portable, not just working because Node's module resolution
-  found the repo's root `node_modules`): `llama-server` + the runtime Node server both
+- **Cross-platform full end-to-end chat (2026-08-27 night / 2026-08-28 early AM):**
+  repo cloned fresh and the whole pipeline (`fetch-model`, `fetch-runtime`,
+  `load-drive.ps1`, launch, real chat question) run for real on:
+  - **win-x64** (this dev machine) — see below.
+  - **linux-x64 (Ubuntu 24.04, home server)** — assembled box at
+    `~/llm-box-linux-test`; `llama.log` shows a real answered prompt (239 tokens in,
+    85 out, ~12.8s). Confirmed 2026-08-28 by reading that box's actual logs over SSH,
+    not by recalling a prior session's summary.
+  - **macos-arm64 (Mac Mini) — partial.** `fetch-model`/`fetch-runtime`/`build-pack`
+    all ran for real (this is what commit `10d105f` fixed: `$env:TEMP` and
+    `curl.exe` don't exist on macOS/Linux). But no assembled box, no
+    `llama-server`/runtime logs, nothing running was found on the Mac Mini as of
+    2026-08-28 — the final assemble+launch+chat step there is **not** confirmed the
+    way linux-x64 and win-x64 are. Worth actually finishing, not assuming done.
+- **win-x64 full end-to-end chat:** assembled box run from a path completely outside
+  the repo (proving it's actually portable, not just working because Node's module
+  resolution found the repo's root `node_modules`): `llama-server` + the runtime Node server both
   started, and `/api/chat` returned a correct answer with source attribution for a
   real question against the `survival-sample` pack.
 - Builder wizard: manifest listing, streaming script output over SSE, and the

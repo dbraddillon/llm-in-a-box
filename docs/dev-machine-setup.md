@@ -34,7 +34,19 @@ Checklist for Claude (or a human) picking this repo up on a new machine.
 `fetch-runtime.ps1` and `load-drive.ps1` auto-detect the current platform
 (`Get-CurrentPlatform` in `_common.ps1`) and fetch/bundle the matching `llama-server`
 build from `ggml-org/llama.cpp`'s releases (win-x64, win-arm64, macos-arm64, macos-x64,
-linux-x64, linux-arm64). Verified for real on win-x64 only so far (full assemble +
-launch + real chat question, from a path outside the repo). mac/Linux should work
-unmodified per the platform table but haven't been run yet — if you're the first to
-try one, that's the thing to confirm.
+linux-x64, linux-arm64).
+
+As of 2026-08-28:
+- **win-x64** — full assemble + launch + real chat question, from a path outside the
+  repo. Verified.
+- **linux-x64 (Ubuntu, home server)** — same level of verification. A box assembled at
+  `~/llm-box-linux-test` on the home server actually answered a real question
+  (`llama.log`: 239 prompt tokens, 85 generated, ~12.8s). Verified.
+- **macos-arm64 (Mac Mini)** — `fetch-model.ps1`/`fetch-runtime.ps1`/`build-pack.mjs`
+  confirmed working for real (this is what commit `10d105f` fixed — `$env:TEMP` and
+  `curl.exe` are both Windows-only and broke both scripts on first real run). The
+  assemble+launch+chat step has **not** been confirmed there — no assembled box or
+  runtime logs found on the Mac Mini as of this date. This is the one real gap left;
+  don't assume it's done just because the other two platforms are.
+- **win-arm64 / linux-arm64** — untested, no specific reason to doubt them beyond
+  "nobody's tried."
