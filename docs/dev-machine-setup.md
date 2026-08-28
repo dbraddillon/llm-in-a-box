@@ -42,11 +42,18 @@ As of 2026-08-28:
 - **linux-x64 (Ubuntu, home server)** — same level of verification. A box assembled at
   `~/llm-box-linux-test` on the home server actually answered a real question
   (`llama.log`: 239 prompt tokens, 85 generated, ~12.8s). Verified.
-- **macos-arm64 (Mac Mini)** — `fetch-model.ps1`/`fetch-runtime.ps1`/`build-pack.mjs`
-  confirmed working for real (this is what commit `10d105f` fixed — `$env:TEMP` and
-  `curl.exe` are both Windows-only and broke both scripts on first real run). The
-  assemble+launch+chat step has **not** been confirmed there — no assembled box or
-  runtime logs found on the Mac Mini as of this date. This is the one real gap left;
-  don't assume it's done just because the other two platforms are.
+- **macos-arm64 (Mac Mini)** — now also fully verified (2026-08-28, closed the gap
+  noted earlier same day): assembled a box at `~/llm-mac-test-box`, launched
+  `llama-server` + the runtime server, and sent it a real question over
+  `/api/chat` — answered correctly with the right source attribution. `pwsh` and
+  `node` are both installed via Homebrew but **not on the PATH for non-interactive
+  SSH commands** (`ssh host "cmd"`) — only for a login shell. Invoke as
+  `ssh host "zsh -l -c 'cmd'"`, or use full paths (`/opt/homebrew/bin/pwsh`,
+  `/opt/homebrew/bin/node`), or you'll get a false "command not found" that looks
+  like the tool isn't installed when it actually is.
+
+All three of the repo's canonical dev machines (win-x64, linux-x64 Ubuntu, macos-arm64)
+are now confirmed at the same level: assemble + launch + real answered question.
+win-arm64 / linux-arm64 remain untested, no specific reason to doubt them.
 - **win-arm64 / linux-arm64** — untested, no specific reason to doubt them beyond
   "nobody's tried."

@@ -67,12 +67,16 @@ ggml-org/llama.cpp releases --fetch-runtime--> runtime-bin/<platform>/
     `~/llm-box-linux-test`; `llama.log` shows a real answered prompt (239 tokens in,
     85 out, ~12.8s). Confirmed 2026-08-28 by reading that box's actual logs over SSH,
     not by recalling a prior session's summary.
-  - **macos-arm64 (Mac Mini) — partial.** `fetch-model`/`fetch-runtime`/`build-pack`
-    all ran for real (this is what commit `10d105f` fixed: `$env:TEMP` and
-    `curl.exe` don't exist on macOS/Linux). But no assembled box, no
-    `llama-server`/runtime logs, nothing running was found on the Mac Mini as of
-    2026-08-28 — the final assemble+launch+chat step there is **not** confirmed the
-    way linux-x64 and win-x64 are. Worth actually finishing, not assuming done.
+  - **macos-arm64 (Mac Mini)** — now also fully confirmed (closed same day, 2026-08-28):
+    assembled a box at `~/llm-mac-test-box`, launched `llama-server` + the runtime
+    server, sent a real `/api/chat` question, got a correctly-sourced answer back.
+    Gotcha worth remembering: Homebrew-installed `pwsh`/`node` aren't on `PATH` for a
+    non-interactive `ssh host "cmd"` invocation, only for a login shell — use
+    `ssh host "zsh -l -c 'cmd'"` or full binary paths, or it'll falsely look like
+    the tools aren't installed.
+
+All three canonical dev machines (win-x64, linux-x64, macos-arm64) are now confirmed
+at the same level: assemble + launch + real answered question.
 - **win-x64 full end-to-end chat:** assembled box run from a path completely outside
   the repo (proving it's actually portable, not just working because Node's module
   resolution found the repo's root `node_modules`): `llama-server` + the runtime Node server both
@@ -127,12 +131,16 @@ rendering for assistant text via `marked` + `DOMPurify`. Visual/interaction pass
 `/api/chat`, streaming, localStorage history, export/clear all unchanged. Verified in
 an actual browser (Chrome via `npm run dev`): empty state, composer, sidebar
 recent-query list, and the inline muted-red error path (no `llama-server` running, so
-the network-failure branch) all render as expected. **Not** verified against a real
-streamed answer — didn't have `llama-server` up during this pass — so the
-markdown-rendering and source-chip styling on an actual model response is unconfirmed;
-worth a once-over next time the full stack is running. Mobile drawer breakpoint
-(`768px`) wasn't visually confirmed either — the sandboxed browser wouldn't resize
-below its host window size — but it's a standard `translateX` drawer pattern.
+the network-failure branch) all render as expected. Empty-state composer position was
+reported "weirdly low" on first real look and fixed same day (two independent
+`flex:1` regions each centering their own content, replaced with one centered block).
+The mark glyph (a "+" rotated 45°, i.e. an X) was reported confusing — read as a
+cancel/close icon — and fixed to a single diagonal slash-in-circle. **Now** also
+verified against a real streamed answer on both win-x64 and macos-arm64: correct
+markdown rendering, correct source-chip attribution (`placeholder.txt`, since the
+loaded pack is the smoke-test fixture, not real content). Mobile drawer breakpoint
+(`768px`) still isn't visually confirmed — the sandboxed browser wouldn't resize below
+its host window size — but it's a standard `translateX` drawer pattern.
 
 **Not yet done:**
 - No reranking / dedup of retrieved chunks, no multi-turn conversation history sent to
@@ -140,10 +148,15 @@ below its host window size — but it's a standard `translateX` drawer pattern.
 - HTML extraction is a tag-stripper, not a Readability-style extractor — will include
   boilerplate (sidebars, related-links blocks, etc.) that isn't inside the excluded
   tags on more complex real-world pages than the test fixture.
-- `npm audit` currently reports a critical/high chain (`protobufjs`, `sharp`) pulled in
-  transitively by `@xenova/transformers`'s ONNX runtime deps. Low real risk here since
-  this only runs locally at build time, not as an exposed service, but worth checking
-  before this dependency tree ships anywhere more exposed than a dev machine.
+- **Dependency security (2026-08-28):** Dependabot enabled on the repo. `vite` bumped
+  5.4 → 6.4.3 (closed 3 alerts, dev-server-only, both workspaces verified still
+  build/run). Remaining: a `protobufjs`/`sharp` chain transitive via
+  `@xenova/transformers@2.17.2`, which is already the latest published version and
+  still pins vulnerable `onnxruntime-web`/`sharp`. `npm audit fix --force` "fixes" this
+  by *downgrading* to `@xenova/transformers@1.4.2` — not a real fix, just an older
+  release — so left alone. Real fix is migrating to the maintained successor
+  `@huggingface/transformers`, which touches `retrieval.mjs`/`build-pack.mjs` and needs
+  its own verification pass against the embedding pipeline before committing to it.
 - `chat-ui`'s Vite dev proxy still points at the old `runtime/server` port — fine for
   `npm run build` + assembled-box usage, just not live-reload-tested against a running
   dev-mode `llama-server`.
