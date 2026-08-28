@@ -165,33 +165,40 @@ async function send() {
         </button>
       </header>
 
-      <EmptyState v-if="!messages.length" />
-
-      <div v-else class="transcript" ref="transcriptEl" @scroll="onTranscriptScroll">
-        <div class="transcript-inner">
-          <div
-            v-for="(m, i) in messages"
-            :key="i"
-            :ref="(el) => (turnEls[i] = el)"
-            class="turn"
-          >
-            <UserBubble v-if="m.role === 'user'" :text="m.text" />
-            <AssistantTurn
-              v-else
-              :text="m.text"
-              :sources="m.sources"
-              :error="m.error"
-              :pending="sending && i === messages.length - 1"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="composer-dock" :class="{ centered: !messages.length }">
+      <div v-if="!messages.length" class="empty-wrap">
+        <EmptyState />
         <div class="composer-inner">
           <Composer v-model="input" :sending="sending" @submit="send" />
         </div>
       </div>
+
+      <template v-else>
+        <div class="transcript" ref="transcriptEl" @scroll="onTranscriptScroll">
+          <div class="transcript-inner">
+            <div
+              v-for="(m, i) in messages"
+              :key="i"
+              :ref="(el) => (turnEls[i] = el)"
+              class="turn"
+            >
+              <UserBubble v-if="m.role === 'user'" :text="m.text" />
+              <AssistantTurn
+                v-else
+                :text="m.text"
+                :sources="m.sources"
+                :error="m.error"
+                :pending="sending && i === messages.length - 1"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="composer-dock">
+          <div class="composer-inner">
+            <Composer v-model="input" :sending="sending" @submit="send" />
+          </div>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -254,11 +261,17 @@ async function send() {
   padding: 12px 20px 20px;
 }
 
-.composer-dock.centered {
+.empty-wrap {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding-bottom: 12vh;
+  justify-content: center;
+  gap: 28px;
+  padding: 0 20px;
+  /* nudge the whole block up from dead-center so it reads closer to the
+     upper-middle of the canvas rather than pinned to the exact viewport center */
+  margin-bottom: 8vh;
 }
 
 .composer-inner {
