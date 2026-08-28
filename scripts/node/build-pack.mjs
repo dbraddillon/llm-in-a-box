@@ -8,7 +8,7 @@ import { readFileSync, readdirSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
-import { pipeline } from '@xenova/transformers';
+import { pipeline } from '@huggingface/transformers';
 import pdfParse from 'pdf-parse';
 import { parse as parseHTML } from 'node-html-parser';
 

@@ -2,9 +2,8 @@
 
 Offline "LLM in a box": a small quantized chat model + a locally-built vector index of
 curated content, packaged so the whole thing can be copied to an offline machine and
-run with no internet and no install step. Sibling concept to `Prepper` (offline content
-drive) — shares no code, but a pack's content source can point at a local Prepper
-`content/` folder instead of re-downloading.
+run with no internet and no install step. A pack's content source can point at any
+local folder of already-downloaded content instead of re-fetching it.
 
 ## How it fits together
 

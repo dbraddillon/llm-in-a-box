@@ -11,9 +11,9 @@ ggml-org/llama.cpp releases --fetch-runtime--> runtime-bin/<platform>/
 
 ## Why these choices
 
-- **Embeddings:** `Xenova/all-MiniLM-L6-v2` via `@xenova/transformers` (transformers.js).
-  Runs fully in Node via ONNX — no Python, no GPU. ~90MB, downloaded once and cached by
-  transformers.js on first use.
+- **Embeddings:** `Xenova/all-MiniLM-L6-v2` via `@huggingface/transformers`
+  (transformers.js). Runs fully in Node via ONNX — no Python, no GPU. ~90MB,
+  downloaded once and cached by transformers.js on first use.
 - **Vector store:** one flat SQLite file per pack (`better-sqlite3`), brute-force
   cosine scan at query time. Fine up to tens of thousands of chunks — a curated pack
   won't get near that. Swap in `sqlite-vec` or an ANN index later if a pack outgrows
@@ -28,10 +28,9 @@ ggml-org/llama.cpp releases --fetch-runtime--> runtime-bin/<platform>/
   GitHub releases (CPU-only build, no CUDA/Vulkan/ROCm). The runtime Node server proxies
   to it and injects retrieved chunks into the prompt (basic RAG, no reranking).
 - **`fetch-runtime.ps1` resolves the latest release rather than hardcoding a version** —
-  same reasoning as Prepper's `kiwix` source type resolving from the OPDS catalog instead
-  of a dated URL. llama.cpp ships build-numbered releases (`b10664`, ...) always flagged
-  as GitHub prereleases; there's no semver "latest", so the script walks `/releases` and
-  takes the first (most recent) entry.
+  llama.cpp ships build-numbered releases (`b10664`, ...) always flagged as GitHub
+  prereleases; there's no semver "latest", so the script walks `/releases` and takes
+  the first (most recent) entry.
 - **Scripts are pwsh (PowerShell 7), not Windows PowerShell** — pwsh runs on all three
   dev machines. They also avoid PS7-only syntax (`?.`, `??`) so they still work under
   Windows PowerShell 5.1 as a fallback (verified on the machine this was scaffolded on,
@@ -40,9 +39,9 @@ ggml-org/llama.cpp releases --fetch-runtime--> runtime-bin/<platform>/
   `_common.ps1`) to pick which cached runtime binary and DLL set to bundle, so the same
   command works unmodified on any of the three dev machines. Override with `-Platform`
   to assemble a box for a different target than the machine you're building on.
-- **Sharing content with Prepper:** a pack's source can be `type: local` pointing at a
-  path under a Prepper checkout's `content/` folder, reusing already-downloaded bytes
-  without coupling the two repos' build systems or config formats.
+- **Reusing already-downloaded content:** a pack's source can be `type: local` pointing
+  at any folder of already-downloaded files, without needing its own fetch/build
+  system to have produced them.
 - **One source of truth for "what packs/models exist":** `gen-manifest.mjs` is the only
   place that parses `pack.yaml`/`models/manifest.yaml`. Everything downstream (the
   other build scripts, the pwsh wrappers, the wizard) reads
@@ -94,7 +93,7 @@ something similar breaks again:**
    `Get-NetTCPConnection`/silent-exit with no output was the symptom; running the exe
    from Git Bash surfaced the real `error while loading shared libraries` message that
    Windows' own exit-code reporting didn't show clearly.
-2. `runtime/server`'s dependencies (`express`, `better-sqlite3`, `@xenova/transformers`)
+2. `runtime/server`'s dependencies (`express`, `better-sqlite3`, `@huggingface/transformers`)
    are hoisted into the repo root's `node_modules` by npm workspaces during dev. A
    naive copy of `runtime/server/` into an output folder looked like it worked when
    tested *inside* the repo tree (Node's module resolution walks up and finds the root
@@ -163,13 +162,23 @@ a model this size.
   tags on more complex real-world pages than the test fixture.
 - **Dependency security (2026-08-28):** Dependabot enabled on the repo. `vite` bumped
   5.4 → 6.4.3 (closed 3 alerts, dev-server-only, both workspaces verified still
-  build/run). Remaining: a `protobufjs`/`sharp` chain transitive via
-  `@xenova/transformers@2.17.2`, which is already the latest published version and
-  still pins vulnerable `onnxruntime-web`/`sharp`. `npm audit fix --force` "fixes" this
-  by *downgrading* to `@xenova/transformers@1.4.2` — not a real fix, just an older
-  release — so left alone. Real fix is migrating to the maintained successor
-  `@huggingface/transformers`, which touches `retrieval.mjs`/`build-pack.mjs` and needs
-  its own verification pass against the embedding pipeline before committing to it.
+  build/run). Migrated `@xenova/transformers@2.17.2` (abandoned, last release, still
+  pinned a vulnerable `protobufjs`/`sharp`/`adm-zip` chain — 12 Dependabot alerts, 1
+  critical/6 high/5 moderate) to the maintained successor `@huggingface/transformers`
+  in both `retrieval.mjs` and `build-pack.mjs` — API is identical
+  (`pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2')`), no logic changes
+  needed. Closed 8 of 12 alerts outright; the remaining `sharp`/`adm-zip` transitive
+  pins (still capped below the patched version by their own parent packages'
+  ranges) are forced to the patched versions via root-level `npm overrides` — added
+  to **both** the root `package.json` (covers the dev workspace install) and
+  `runtime/server/package.json` (covers `load-drive.ps1`'s standalone
+  `npm install` into the shipped box's `server/` folder, which does not inherit
+  workspace-root config) — verified both resolve to the patched versions after a
+  clean install. `npm audit` now reports 0 vulnerabilities. Verified for real, not
+  just installed: rebuilt `survival-sample`'s index with the new library, assembled a
+  box, launched it, and asked a real question — correct sourced answer came back
+  unchanged, confirming the embedding pipeline behaves the same under the new
+  library.
 - `chat-ui`'s Vite dev proxy target (`127.0.0.1:7860`) already matches
   `runtime/server`'s actual port — the "points at the old port" note this used to say
   was stale, corrected 2026-08-28. Still not live-reload-tested via `npm run dev`

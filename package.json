@@ -10,5 +10,9 @@
   "scripts": {
     "gen-manifest": "node scripts/node/gen-manifest.mjs",
     "wizard": "npm run dev --workspace=builder"
+  },
+  "overrides": {
+    "sharp": "^0.35.0",
+    "adm-zip": "^0.6.0"
   }
 }

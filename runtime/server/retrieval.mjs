@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { pipeline } from '@xenova/transformers';
+import { pipeline } from '@huggingface/transformers';
 
 let embedPromise;
 function getEmbedder() {

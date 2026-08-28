@@ -22,7 +22,7 @@ Checklist for Claude (or a human) picking this repo up on a new machine.
 
 ## macOS (MacBook Pro, arm64)
 - [ ] `brew install powershell` for `pwsh`
-- [ ] `better-sqlite3` and `@xenova/transformers`'s `onnxruntime-node` both ship
+- [ ] `better-sqlite3` and `@huggingface/transformers`'s `onnxruntime-node` both ship
       prebuilt arm64 binaries — `npm install` shouldn't need Xcode command line
       tools, but if it tries to compile from source, that's the first thing to check.
 - Confirmed on the **Mac Mini** specifically (arm64, different machine than the
@@ -63,3 +63,9 @@ All three of the repo's canonical dev machines (win-x64, linux-x64 Ubuntu, macos
 are now confirmed at the same level: assemble + launch + real answered question.
 **win-arm64 / linux-arm64** remain untested, no specific reason to doubt them beyond
 "nobody's tried."
+
+**Note (2026-08-28):** the above predates the `@xenova/transformers` →
+`@huggingface/transformers` swap (see `01-architecture.md`'s dependency-security
+entry). Only **win-x64** has re-verified full end-to-end chat since that swap;
+macos-arm64 and linux-x64 still need a re-run to close the gap — same embedding
+model/API, low risk, but not yet confirmed on those platforms specifically.
