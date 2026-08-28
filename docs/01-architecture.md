@@ -105,6 +105,21 @@ empties state/localStorage and disables both buttons. Deliberately did **not** a
 multi-conversation management (named threads, a switcher UI) — one persisted
 conversation covers the actual use case; that would be scope the tool doesn't need.
 
+**Chat UI restyle (2026-08-28):** `runtime/chat-ui` rebuilt as a Grok-style chat shell
+— split into `Sidebar`/`Composer`/`UserBubble`/`AssistantTurn`/`EmptyState` components,
+near-black design tokens, self-hosted Sora + IBM Plex Mono (`woff2` bundled via Vite,
+not a Google Fonts `<link>` — this ships to a machine with no internet), markdown
+rendering for assistant text via `marked` + `DOMPurify`. Visual/interaction pass only —
+`/api/chat`, streaming, localStorage history, export/clear all unchanged. Verified in
+an actual browser (Chrome via `npm run dev`): empty state, composer, sidebar
+recent-query list, and the inline muted-red error path (no `llama-server` running, so
+the network-failure branch) all render as expected. **Not** verified against a real
+streamed answer — didn't have `llama-server` up during this pass — so the
+markdown-rendering and source-chip styling on an actual model response is unconfirmed;
+worth a once-over next time the full stack is running. Mobile drawer breakpoint
+(`768px`) wasn't visually confirmed either — the sandboxed browser wouldn't resize
+below its host window size — but it's a standard `translateX` drawer pattern.
+
 **Not yet done:**
 - No reranking / dedup of retrieved chunks, no multi-turn conversation history sent to
   the model (each question is answered independently).
