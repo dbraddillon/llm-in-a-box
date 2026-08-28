@@ -56,11 +56,12 @@ if (-not $asset) {
 
 Write-Host "downloading $($asset.name) from build $($release.tag_name)"
 New-Item -ItemType Directory -Force -Path $destDir | Out-Null
-$archivePath = Join-Path $env:TEMP $asset.name
-curl.exe -L --fail --retry 3 -C - -o "$archivePath" $asset.browser_download_url
+$tempDir = Get-TempDir
+$archivePath = Join-Path $tempDir $asset.name
+& (Get-CurlCommand) -L --fail --retry 3 -C - -o "$archivePath" $asset.browser_download_url
 if ($LASTEXITCODE -ne 0) { throw "download failed for $($asset.name)" }
 
-$stage = Join-Path $env:TEMP "llama-runtime-stage-$Platform"
+$stage = Join-Path $tempDir "llama-runtime-stage-$Platform"
 Remove-Item -Recurse -Force $stage -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
 if ($asset.name -like '*.zip') {

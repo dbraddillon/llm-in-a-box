@@ -18,3 +18,21 @@ function Get-CurrentPlatform {
   if ($IsLinux) { return $(if ($isArm) { 'linux-arm64' } else { 'linux-x64' }) }
   throw "could not auto-detect platform -- pass -Platform explicitly"
 }
+
+function Test-IsWindowsPlatform {
+  return ($env:OS -eq 'Windows_NT') -or $IsWindows
+}
+
+# Windows PowerShell 5.1 aliases `curl` to Invoke-WebRequest, so scripts need the real
+# curl.exe explicitly there. pwsh doesn't define that alias on any platform, and on
+# Mac/Linux the binary itself is just `curl`, not `curl.exe` -- there's no .exe there.
+function Get-CurlCommand {
+  return $(if (Test-IsWindowsPlatform) { 'curl.exe' } else { 'curl' })
+}
+
+# $env:TEMP is a Windows-only environment variable -- macOS/Linux don't set it (Mac
+# uses $env:TMPDIR, Linux conventionally just /tmp, neither guaranteed). .NET's
+# GetTempPath() resolves the right one on every platform.
+function Get-TempDir {
+  return [System.IO.Path]::GetTempPath().TrimEnd('/', '\')
+}

@@ -24,7 +24,7 @@ if ((Test-Path $dest) -and -not $Force) {
 $url = "https://huggingface.co/$($entry.repo)/resolve/main/$($entry.file)"
 Write-Host "downloading $url"
 Write-Host "NOTE: this URL is a best-effort pointer -- if it 404s, check the repo on huggingface.co and update models/manifest.yaml"
-curl.exe -L --fail --retry 3 -C - -o "$dest" $url
+& (Get-CurlCommand) -L --fail --retry 3 -C - -o "$dest" $url
 if ($LASTEXITCODE -ne 0) { throw "download failed for $($entry.file)" }
 
 if ($entry.sha256) {
