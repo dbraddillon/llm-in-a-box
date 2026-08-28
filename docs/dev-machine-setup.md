@@ -25,10 +25,17 @@ Checklist for Claude (or a human) picking this repo up on a new machine.
 - [ ] `better-sqlite3` and `@xenova/transformers`'s `onnxruntime-node` both ship
       prebuilt arm64 binaries — `npm install` shouldn't need Xcode command line
       tools, but if it tries to compile from source, that's the first thing to check.
+- Confirmed on the **Mac Mini** specifically (arm64, different machine than the
+  MacBook Pro this section is nominally about, but same OS/arch): `pwsh` and `node`
+  both installed via Homebrew and working, as of 2026-08-28. See "Cross-platform
+  status" below for the PATH gotcha with non-interactive SSH.
 
 ## Ubuntu (ThinkPad mini)
 - [ ] `sudo apt install -y powershell` (or the snap package) for `pwsh`
 - [ ] Same prebuilt-binary note as macOS applies for linux-x64.
+- Confirmed on the **home server** specifically (Ubuntu 24.04, different machine than
+  the ThinkPad mini this section is nominally about): full pipeline including `pwsh`
+  ran successfully there as of 2026-08-27/28. See "Cross-platform status" below.
 
 ## Cross-platform status
 `fetch-runtime.ps1` and `load-drive.ps1` auto-detect the current platform
@@ -54,6 +61,5 @@ As of 2026-08-28:
 
 All three of the repo's canonical dev machines (win-x64, linux-x64 Ubuntu, macos-arm64)
 are now confirmed at the same level: assemble + launch + real answered question.
-win-arm64 / linux-arm64 remain untested, no specific reason to doubt them.
-- **win-arm64 / linux-arm64** — untested, no specific reason to doubt them beyond
-  "nobody's tried."
+**win-arm64 / linux-arm64** remain untested, no specific reason to doubt them beyond
+"nobody's tried."

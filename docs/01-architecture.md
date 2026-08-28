@@ -170,6 +170,13 @@ a model this size.
   release — so left alone. Real fix is migrating to the maintained successor
   `@huggingface/transformers`, which touches `retrieval.mjs`/`build-pack.mjs` and needs
   its own verification pass against the embedding pipeline before committing to it.
-- `chat-ui`'s Vite dev proxy still points at the old `runtime/server` port — fine for
-  `npm run build` + assembled-box usage, just not live-reload-tested against a running
-  dev-mode `llama-server`.
+- `chat-ui`'s Vite dev proxy target (`127.0.0.1:7860`) already matches
+  `runtime/server`'s actual port — the "points at the old port" note this used to say
+  was stale, corrected 2026-08-28. Still not live-reload-tested via `npm run dev`
+  against a running dev-mode `llama-server`, though — all real-backend verification so
+  far has gone through the built `dist` + assembled box, not the Vite dev server's
+  proxy.
+- Only real content pack loaded/tested is `survival-sample`, a one-file smoke-test
+  fixture (`packs/survival-sample/fixtures/placeholder.txt`) — one chunk, so
+  retrieval relevance and multi-chunk source attribution are both untested against
+  anything real.

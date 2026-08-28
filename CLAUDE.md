@@ -58,9 +58,13 @@ cd builder; npm run dev
 
 ## Status
 
-Full pipeline verified end to end 2026-08-27: real content (incl. PDF/HTML) fetched,
-chunked, embedded; a real `llama-server` binary and a real model fetched; a box
-assembled and run from a path completely outside the repo, answering a real question
-correctly with source attribution. See `docs/01-architecture.md` for exactly what's
-been tested vs. what's still missing (streaming responses, reranking, etc.), and
+Full pipeline verified end to end and cross-platform as of 2026-08-28: real content
+(incl. PDF/HTML) fetched, chunked, embedded; a real `llama-server` binary and a real
+model fetched; a box assembled and run from a path completely outside the repo,
+answering a real question correctly with source attribution and streaming — on all
+three canonical dev machines (win-x64, linux-x64, macos-arm64), not just one. Chat UI
+restyled as a Grok-style shell. Multi-turn conversation memory shipped (`/api/chat`
+now takes prior turns, not just the current question). Repo is public, Dependabot
+enabled. See `docs/01-architecture.md` for exactly what's been tested vs. what's still
+missing (reranking, a real content pack instead of the smoke-test fixture, etc.), and
 `docs/content-sourcing.md` before pointing a pack at content you don't have rights to.
