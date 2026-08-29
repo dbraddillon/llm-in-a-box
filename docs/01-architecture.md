@@ -6,14 +6,27 @@
 packs/<id>/pack.yaml --fetch-content--> build/raw/<id>/ --build-pack--> build/index/<id>.sqlite
 models/manifest.yaml --fetch-model--> models/cache/<file>.gguf
 ggml-org/llama.cpp releases --fetch-runtime--> runtime-bin/<platform>/
-(index files + model + runtime bin + runtime/) --load-drive--> out/<box>/ --package-output--> out/<box>.zip
+Xenova/all-MiniLM-L6-v2 --fetch-embedder--> runtime/server/.model-cache/
+(index files + model + runtime bin + runtime/, including .model-cache) --load-drive--> out/<box>/ --package-output--> out/<box>.zip
 ```
 
 ## Why these choices
 
 - **Embeddings:** `Xenova/all-MiniLM-L6-v2` via `@huggingface/transformers`
-  (transformers.js). Runs fully in Node via ONNX — no Python, no GPU. ~90MB,
-  downloaded once and cached by transformers.js on first use.
+  (transformers.js). Runs fully in Node via ONNX — no Python, no GPU. ~90MB.
+  `retrieval.mjs`, `build-pack.mjs`, and `fetch-embedder.mjs` all set the **global**
+  `env.cacheDir` to `runtime/server/.model-cache` (relative to `retrieval.mjs`'s own
+  file location, so it resolves correctly whether that file is sitting in the dev
+  tree or a shipped box) instead of the library's default — which lives inside
+  `node_modules/@huggingface/transformers` and would be empty on a shipped box's
+  standalone `npm install`, silently requiring internet on the first real query.
+  Global `env.cacheDir`, not `pipeline()`'s per-call `cache_dir` option — the latter
+  looked sufficient (model/tokenizer binaries loaded from it fine) but
+  `config.json`/`tokenizer_config.json` load through an internal code path
+  (`get_model_files` → `get_config`) that doesn't forward the per-call option and
+  always falls back to the global default, so a per-call-only fix still crashed on
+  the first real query with no other symptom until actually tested offline. See the
+  dated entry below.
 - **Vector store:** one flat SQLite file per pack (`better-sqlite3`), brute-force
   cosine scan at query time. Fine up to tens of thousands of chunks — a curated pack
   won't get near that. Swap in `sqlite-vec` or an ANN index later if a pack outgrows
@@ -203,3 +216,57 @@ a model this size.
   for a query. Not yet tested against a real-world epub from an actual publisher —
   those can have messier markup (multiple rootfiles, non-XHTML manifest items,
   `linear="no"` spine items) than the synthetic fixture covers.
+- **A shipped box couldn't actually answer its first question offline (found and
+  fixed 2026-08-29):** prompted by the question "can a box add new content once it's
+  offline" — the direct answer is still no (the chunking/extraction toolchain in
+  `scripts/node` never gets copied into `load-drive.ps1`'s output, only
+  `runtime/server` does; a pre-built `.sqlite` dropped into an existing box's
+  `index/` folder via USB *does* get picked up on restart, since `index.mjs` just
+  globs everything there, but the box itself can't produce one) — but chasing it
+  surfaced a bigger problem: **every query**, not just adding content, needed
+  internet on a genuinely fresh box. `retrieval.mjs`'s embedder is a live
+  `pipeline()` call, same as at build time, and a standalone `npm install` of
+  `runtime/server` (what `load-drive.ps1` actually runs) starts with an empty
+  model cache — confirmed by installing it fresh in an empty directory and finding
+  no cache directory at all until the first call created one by reaching the
+  network. The three previous "verified offline" cross-platform runs never caught
+  this because all three test machines had live internet, which silently masked it.
+  Fixed with `fetch-embedder.ps1`/`fetch-embedder.mjs` (new, mirrors
+  `fetch-model.ps1`'s shape) pre-warming `runtime/server/.model-cache`, which
+  `load-drive.ps1` now requires before assembling (same missing-prerequisite check
+  pattern as the GGUF model) and bundles automatically since it's copied as part of
+  `runtime/server`. Getting this actually right took two more rounds, both only
+  caught by testing for real:
+  1. **`pipeline()`'s per-call `cache_dir` option isn't enough** — model/tokenizer
+     binaries loaded from it fine, but `config.json`/`tokenizer_config.json` load
+     through `get_model_files` → `get_config`, which only forwards `{ config }` to
+     the next call, silently dropping `cache_dir` and falling back to the library's
+     own default. Looked completely fine until tested with no network — the config
+     files fetch silently (fast, unnoticed) whenever network happens to be
+     available, which is exactly the "worked in every test so far" trap this whole
+     entry is about. Real fix: set the **global** `env.cacheDir`, which every
+     internal code path falls back to regardless of whether `cache_dir` got
+     threaded through.
+  2. **Verifying "no internet" honestly needed a real network-isolated environment**,
+     not just re-reading code — used `docker run --network none` (confirmed via
+     `/proc/net/dev` showing only `lo`) against a real assembled box, which is what
+     actually caught both the `cache_dir` bug above and, along the way, a **second,
+     unrelated real bug**: `fetch-runtime.ps1 -Platform linux-x64` run *from
+     Windows* produced a broken bundle, because Windows' `tar.exe` needs an
+     elevated privilege to create the `.so` SONAME symlinks a Linux `llama-server`
+     build ships (`libfoo.so`/`libfoo.so.0` → `libfoo.so.0.1.2`) and silently drops
+     those entries instead of failing loudly. Fixed in `fetch-runtime.ps1`: after
+     tar extraction, scan for versioned `.so.X.Y.Z` files and fill in any missing
+     `lib.so`/`lib.so.<major>` aliases with plain file copies (works regardless of
+     Windows symlink privileges, and is a no-op on a platform where tar already
+     created real symlinks). Confirmed fixed with `ldd` inside the container
+     (all libraries resolved) before finding the cache bug above.
+  Final verification, fully real: assembled a linux-x64 box, built a Docker image
+  from it (installing `runtime/server`'s deps *inside* the Linux container, since
+  `better-sqlite3` ships platform-native binaries and the box's own `node_modules`
+  had been installed on Windows), ran it with `--network none`, and got a correctly
+  sourced answer back from a container with no network interface besides loopback.
+  This ad hoc Docker harness was thrown together as a one-off (Dockerfile deleted
+  after) — worth turning into a real `scripts/`-level test if this class of bug is
+  worth guarding against going forward, since it found two real, previously-unknown
+  bugs in a single run.

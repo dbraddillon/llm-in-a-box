@@ -1,7 +1,13 @@
 param([Parameter(Mandatory)][string]$Path)
 . "$PSScriptRoot/_common.ps1"
 
-$required = @('server/index.mjs', 'chat-ui/dist/index.html', 'model/model.gguf', 'manifest.json')
+$required = @(
+  'server/index.mjs',
+  'server/.model-cache/Xenova/all-MiniLM-L6-v2/onnx/model.onnx',
+  'chat-ui/dist/index.html',
+  'model/model.gguf',
+  'manifest.json'
+)
 $missing = $required | Where-Object { -not (Test-Path (Join-Path $Path $_)) }
 if ($missing) {
   Write-Warning "missing: $($missing -join ', ')"

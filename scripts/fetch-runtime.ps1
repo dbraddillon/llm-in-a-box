@@ -68,6 +68,24 @@ if ($asset.name -like '*.zip') {
   Expand-Archive -Path $archivePath -DestinationPath $stage -Force
 } else {
   tar -xzf $archivePath -C $stage
+  # Linux/macOS .so files ship as a chain of symlinks (libfoo.so -> libfoo.so.0 ->
+  # libfoo.so.0.1.2, the real file) that the dynamic linker looks up by the shorter
+  # names. Windows' tar.exe needs SeCreateSymbolicLinkPrivilege (admin, or Developer
+  # Mode) to create them and otherwise silently drops those entries with an
+  # "Invalid argument" error instead of failing the extraction -- so fetching a
+  # non-Windows runtime *from a Windows machine* can produce a binary that's missing
+  # the libraries it dlopen's by SONAME. Real symlink creation would hit the exact
+  # same privilege wall, so fill the gap with plain file copies instead (harmless
+  # no-ops on a platform where tar already created real symlinks, since those
+  # already resolve and get skipped below).
+  Get-ChildItem $stage -Recurse -File | Where-Object { $_.Name -match '^(lib.+?\.so)\.\d+(\.\d+)*$' } | ForEach-Object {
+    $base = $Matches[1]
+    $major = ($_.Name -split '\.so\.')[1].Split('.')[0]
+    foreach ($alias in @($base, "$base.$major")) {
+      $aliasPath = Join-Path $_.DirectoryName $alias
+      if (-not (Test-Path $aliasPath)) { Copy-Item $_.FullName $aliasPath }
+    }
+  }
 }
 
 $found = Get-ChildItem $stage -Recurse -Filter $target.binName | Select-Object -First 1

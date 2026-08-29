@@ -42,6 +42,11 @@ node ./scripts/node/gen-manifest.mjs
 # download llama-server for this machine's platform (auto-detected) into runtime-bin/
 ./scripts/fetch-runtime.ps1
 
+# cache the query/chunk embedding model into runtime/server/.model-cache -- required
+# before load-drive.ps1, or the assembled box can't answer its first question offline
+# (build-pack.ps1 also warms this as a side effect, so it's often already done)
+./scripts/fetch-embedder.ps1
+
 # assemble runtime + chosen packs + chosen model + platform runtime binary into one folder
 ./scripts/load-drive.ps1 -Packs survival-sample -Model qwen2.5-3b-instruct-q4 -Output ./out/box
 

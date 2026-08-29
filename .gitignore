@@ -4,6 +4,7 @@ runtime-bin/
 out/
 node_modules/
 runtime/chat-ui/dist/
+runtime/server/.model-cache/
 builder/dist/
 
 .vs/

@@ -16,6 +16,11 @@ if (-not $modelEntry) { throw "unknown model '$Model'" }
 $modelFile = Join-Path $Root "models/cache/$($modelEntry.file)"
 if (-not (Test-Path $modelFile)) { throw "model not fetched yet -- run fetch-model.ps1 -Model $Model first" }
 
+$embedderCacheFile = Join-Path $Root 'runtime/server/.model-cache/Xenova/all-MiniLM-L6-v2/onnx/model.onnx'
+if (-not (Test-Path $embedderCacheFile)) {
+  throw "embedding model not fetched yet -- run ./scripts/fetch-embedder.ps1 first (or build-pack.ps1 for any pack, which warms it as a side effect). Without it, the assembled box can't answer its first question offline."
+}
+
 if (Test-Path $Output) { Remove-Item $Output -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $Output | Out-Null
 

@@ -8,7 +8,7 @@ import { readFileSync, readdirSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
-import { pipeline } from '@huggingface/transformers';
+import { pipeline, env } from '@huggingface/transformers';
 import pdfParse from 'pdf-parse';
 import { parse as parseHTML } from 'node-html-parser';
 import AdmZip from 'adm-zip';
@@ -123,6 +123,13 @@ function chunkText(text) {
   return chunks.filter((c) => c.length > 0);
 }
 
+// Same cache location retrieval.mjs uses (relative to runtime/server, not here) --
+// building a pack this way naturally warms the cache load-drive.ps1 bundles into a
+// shipped box, so fetch-embedder.ps1 is only strictly needed if you load-drive
+// before ever building a pack. Set as the GLOBAL env.cacheDir, not a per-call option
+// -- see the comment in retrieval.mjs for why (some internal config-loading calls
+// don't forward the per-call option).
+env.cacheDir = join(root, 'runtime', 'server', '.model-cache');
 console.log('loading embedding model (Xenova/all-MiniLM-L6-v2)...');
 const embed = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
 

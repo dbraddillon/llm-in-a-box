@@ -36,9 +36,11 @@ questions using only that content, with source attribution, entirely offline.
 - **Runs on Windows, macOS (Apple Silicon), and Linux** without code changes — the
   loader auto-detects the current platform and fetches the matching `llama-server`
   binary.
-- **No install step on the target machine** — the assembled output folder is
-  self-contained (its own `node_modules`, its own model file, its own runtime
-  binary). The machine you hand it to needs nothing preinstalled.
+- **No install step, no internet, on the target machine** — the assembled output
+  folder is fully self-contained: its own `node_modules`, its own chat model file,
+  its own runtime binary, and its own copy of the (small, separate) embedding model
+  used to search the index at query time. The machine you hand it to needs nothing
+  preinstalled and no network access, including for the very first question.
 
 ## Quick start
 
@@ -46,6 +48,7 @@ questions using only that content, with source attribution, entirely offline.
 ./setup.ps1                                                       # one-time: install JS deps
 ./scripts/fetch-model.ps1 -Model qwen2.5-3b-instruct-q4            # ~2GB download
 ./scripts/fetch-runtime.ps1                                        # llama-server for this machine
+./scripts/fetch-embedder.ps1                                       # ~90MB, cached for load-drive to bundle
 ./scripts/build-pack.ps1 -Pack survival-sample                     # builds the included smoke-test pack
 ./scripts/load-drive.ps1 -Packs survival-sample -Model qwen2.5-3b-instruct-q4 -Output ./out/box
 ```
