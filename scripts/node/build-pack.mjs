@@ -11,6 +11,8 @@ import Database from 'better-sqlite3';
 import { pipeline } from '@huggingface/transformers';
 import pdfParse from 'pdf-parse';
 import { parse as parseHTML } from 'node-html-parser';
+import AdmZip from 'adm-zip';
+import { XMLParser } from 'fast-xml-parser';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const packId = process.argv[2];
@@ -40,7 +42,7 @@ if (!existsSync(rawDir)) {
 const MAX_CHARS = pack.chunk?.max_chars ?? 1200;
 const OVERLAP = pack.chunk?.overlap_chars ?? 160;
 
-const EXTRACTABLE = ['.txt', '.md', '.pdf', '.html', '.htm'];
+const EXTRACTABLE = ['.txt', '.md', '.pdf', '.html', '.htm', '.epub'];
 
 function walk(dir) {
   let out = [];
@@ -52,9 +54,48 @@ function walk(dir) {
   return out;
 }
 
-// PDF via pdf-parse (pdf.js under the hood) and HTML via node-html-parser (tag-strip,
-// not a full Readability-style boilerplate remover -- fine for a single article/page,
-// noisier for a full nav-heavy site scrape).
+// Shared by the .html/.htm path and each chapter of an .epub -- tag-strip, not a full
+// Readability-style boilerplate remover -- fine for a single article/page or a book
+// chapter, noisier for a full nav-heavy site scrape.
+function stripHtml(html) {
+  const root = parseHTML(html);
+  root.querySelectorAll('script, style, nav, header, footer').forEach((el) => el.remove());
+  // textContent on the whole doc picks up <!doctype> and <title>/<head> text --
+  // scope to <body> so only visible page content makes it into the pack.
+  const body = root.querySelector('body');
+  return (body ?? root).textContent;
+}
+
+const xmlParser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' });
+
+// An epub is a zip: META-INF/container.xml points at the .opf package file, which lists
+// every content file (manifest) and the order to read them in (spine). Each spine item
+// is itself XHTML, so chapters get the same tag-strip as a standalone .html file.
+function extractEpub(file) {
+  const zip = new AdmZip(file);
+
+  const container = xmlParser.parse(zip.readAsText('META-INF/container.xml'));
+  const rootfile = [].concat(container.container.rootfiles.rootfile)[0];
+  const opfPath = rootfile['@_full-path'];
+
+  const opf = xmlParser.parse(zip.readAsText(opfPath));
+  const opfDir = dirname(opfPath);
+
+  const idToHref = new Map(
+    [].concat(opf.package.manifest.item).map((item) => [item['@_id'], item['@_href']]),
+  );
+  const spineHrefs = [].concat(opf.package.spine.itemref)
+    .map((itemref) => idToHref.get(itemref['@_idref']))
+    .filter(Boolean);
+
+  return spineHrefs
+    .map((href) => join(opfDir, href).replace(/\\/g, '/'))
+    .map((entryPath) => stripHtml(zip.readAsText(entryPath)))
+    .join('\n\n');
+}
+
+// PDF via pdf-parse (pdf.js under the hood), HTML via node-html-parser, epub via AdmZip
+// + fast-xml-parser to walk the spine, then node-html-parser per chapter.
 async function extractText(file) {
   const lower = file.toLowerCase();
   if (lower.endsWith('.pdf')) {
@@ -62,12 +103,10 @@ async function extractText(file) {
     return text;
   }
   if (lower.endsWith('.html') || lower.endsWith('.htm')) {
-    const root = parseHTML(readFileSync(file, 'utf8'));
-    root.querySelectorAll('script, style, nav, header, footer').forEach((el) => el.remove());
-    // textContent on the whole doc picks up <!doctype> and <title>/<head> text --
-    // scope to <body> so only visible page content makes it into the pack.
-    const body = root.querySelector('body');
-    return (body ?? root).textContent;
+    return stripHtml(readFileSync(file, 'utf8'));
+  }
+  if (lower.endsWith('.epub')) {
+    return extractEpub(file);
   }
   return readFileSync(file, 'utf8');
 }

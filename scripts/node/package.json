@@ -7,6 +7,8 @@
     "better-sqlite3": "^11.3.0",
     "@huggingface/transformers": "^4.2.0",
     "pdf-parse": "^1.1.1",
-    "node-html-parser": "^6.1.13"
+    "node-html-parser": "^6.1.13",
+    "adm-zip": "^0.6.0",
+    "fast-xml-parser": "^5.11.1"
   }
 }

@@ -22,6 +22,10 @@ ggml-org/llama.cpp releases --fetch-runtime--> runtime-bin/<platform>/
   via `node-html-parser` scoped to `<body>` with `script`/`style`/`nav`/`header`/`footer`
   stripped first. The HTML path is a tag-stripper, not a Readability-style boilerplate
   remover — fine for a single article/page, noisier on a nav-heavy full-site scrape.
+  `.epub` is unzipped with `adm-zip`, its `container.xml`/`.opf` walked with
+  `fast-xml-parser` to get manifest + spine order, then each chapter (itself XHTML)
+  reuses the same tag-strip as the HTML path. Chapter order comes from the spine, not
+  manifest order — epub authoring tools don't guarantee those match.
   See `content-sourcing.md` for what's reasonable to point these at.
 - **Chat model runtime:** llama.cpp's `llama-server` binary, OpenAI-compatible
   `/v1/chat/completions` endpoint, fetched per-platform from `ggml-org/llama.cpp`'s
@@ -189,3 +193,13 @@ a model this size.
   fixture (`packs/survival-sample/fixtures/placeholder.txt`) — one chunk, so
   retrieval relevance and multi-chunk source attribution are both untested against
   anything real.
+- **`.epub` support (2026-08-28):** `build-pack.mjs` now extracts `.epub` files
+  (`adm-zip` + `fast-xml-parser` to walk `container.xml`/the `.opf` manifest+spine,
+  then the existing HTML tag-strip per chapter). Verified for real: built a synthetic
+  two-chapter epub (spine order deliberately different from manifest order, plus
+  `nav`/`header`/`footer` noise in one chapter), ran it through `build-pack.mjs` for
+  real, confirmed the resulting chunk has both chapters in spine order with the
+  noise stripped, and confirmed retrieval (`retrieval.mjs`) finds the right chapter
+  for a query. Not yet tested against a real-world epub from an actual publisher —
+  those can have messier markup (multiple rootfiles, non-XHTML manifest items,
+  `linear="no"` spine items) than the synthetic fixture covers.

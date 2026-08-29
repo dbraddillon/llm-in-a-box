@@ -69,7 +69,8 @@ chunk:
   overlap_chars: 160
 ```
 
-- `.txt`, `.md`, `.pdf`, and `.html`/`.htm` are all supported extraction formats.
+- `.txt`, `.md`, `.pdf`, `.html`/`.htm`, and `.epub` are all supported extraction
+  formats.
 - `type: local` reads from a folder on disk; `type: http` fetches from a URL.
 - Run `./scripts/fetch-content.ps1 -Pack my-pack` (only needed for `http` sources)
   then `./scripts/build-pack.ps1 -Pack my-pack` to chunk and embed it into
