@@ -69,3 +69,13 @@ are now confirmed at the same level: assemble + launch + real answered question.
 entry). Only **win-x64** has re-verified full end-to-end chat since that swap;
 macos-arm64 and linux-x64 still need a re-run to close the gap — same embedding
 model/API, low risk, but not yet confirmed on those platforms specifically.
+
+**Note (2026-08-29):** none of the "offline" verifications above were actually run
+without network access — see `01-architecture.md`'s dated entry for a real bug that
+went unnoticed because of it (a shipped box needed internet on its first query).
+Fixed and verified for real this time via a network-isolated Docker container
+(`--network none`), covering win-x64's build output and a linux-x64 runtime binary
+built by cross-fetching from Windows. **macos-arm64 still needs its own re-run** —
+the fix should apply identically (same embedding library, same cache mechanism),
+but hasn't been confirmed on that platform specifically, and this bug class is
+exactly the kind that "should apply identically" undersells.

@@ -63,12 +63,23 @@ cd builder; npm run dev
 ## Status
 
 Full pipeline verified end to end and cross-platform as of 2026-08-28: real content
-(incl. PDF/HTML) fetched, chunked, embedded; a real `llama-server` binary and a real
-model fetched; a box assembled and run from a path completely outside the repo,
+(incl. PDF/HTML/epub) fetched, chunked, embedded; a real `llama-server` binary and a
+real model fetched; a box assembled and run from a path completely outside the repo,
 answering a real question correctly with source attribution and streaming — on all
 three canonical dev machines (win-x64, linux-x64, macos-arm64), not just one. Chat UI
 restyled as a Grok-style shell. Multi-turn conversation memory shipped (`/api/chat`
 now takes prior turns, not just the current question). Repo is public, Dependabot
-enabled. See `docs/01-architecture.md` for exactly what's been tested vs. what's still
+enabled (0 open alerts as of 2026-08-29).
+
+**2026-08-29 correction:** those "offline" verifications above never actually tested
+without a network connection — all three machines had live internet, which silently
+masked a real bug (a shipped box needed internet on its first query for the embedding
+model). Fixed and this time verified for real, in a Docker container with
+`--network none`, on win-x64/linux-x64 only so far — macos-arm64 not yet re-confirmed
+under the fix. See `docs/01-architecture.md`'s dated entry for the full story,
+including a second unrelated bug the same test caught (a Windows-cross-fetched Linux
+runtime was silently missing shared libraries).
+
+See `docs/01-architecture.md` for exactly what's been tested vs. what's still
 missing (reranking, a real content pack instead of the smoke-test fixture, etc.), and
 `docs/content-sourcing.md` before pointing a pack at content you don't have rights to.
