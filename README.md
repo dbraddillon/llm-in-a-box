@@ -7,6 +7,16 @@ a machine with no internet connection and no install step, and just run.
 Point it at survival guides, a manual set, internal docs, whatever — it answers
 questions using only that content, with source attribution, entirely offline.
 
+## Recent changes
+
+Actively developed, pre-1.0 — expect rough edges and frequent changes. Full history:
+`git log`.
+
+| Date | Change |
+|---|---|
+| 2026-08-29 | Fixed a real bug where an assembled box needed internet on its first question; added a permanent test (`verify-offline.ps1`) that proves it in a network-isolated Docker container instead of just trusting it |
+| 2026-08-28 | Added `.epub` support; closed all dependency security alerts; made the repo public |
+
 ## What it does
 
 1. You pick some content (a folder of files, or a URL) and describe it in a
