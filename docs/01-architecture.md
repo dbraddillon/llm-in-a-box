@@ -266,7 +266,20 @@ a model this size.
   `better-sqlite3` ships platform-native binaries and the box's own `node_modules`
   had been installed on Windows), ran it with `--network none`, and got a correctly
   sourced answer back from a container with no network interface besides loopback.
-  This ad hoc Docker harness was thrown together as a one-off (Dockerfile deleted
-  after) — worth turning into a real `scripts/`-level test if this class of bug is
-  worth guarding against going forward, since it found two real, previously-unknown
-  bugs in a single run.
+  This ad hoc Docker harness found two real, previously-unknown bugs in a single
+  run, which was reason enough to keep it: promoted to a permanent, rerunnable
+  `./scripts/verify-offline.ps1 -Model <id>` (plus `offline-verify.Dockerfile` and
+  `offline-verify-query.mjs`) the same day. Assembles its own box (any `-Packs`,
+  defaults to `survival-sample`), targets whatever architecture the Docker daemon
+  itself runs (not necessarily the host's — Docker Desktop runs a Linux VM
+  regardless of host OS), confirms isolation itself by checking
+  `/proc/net/dev` for a non-loopback interface rather than trusting the
+  `--network none` flag blindly, and sends a real `/api/chat` request. Two
+  PowerShell-specific gotchas surfaced writing it, both fixed: redirecting a native
+  command's stderr (`docker rm -f ... 2>$null`) turns into a terminating error
+  under this repo's `$ErrorActionPreference='Stop'` even on success — use
+  `try {} catch {}` instead, never stream redirection, on any native call whose
+  failure is expected/harmless; and passing a multi-line double-quoted JS string as
+  a `docker exec ... node -e` argument gets its quotes mangled by PowerShell's
+  native-argument marshalling — write it to a real file and exec that by path
+  instead.

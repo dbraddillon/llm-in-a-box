@@ -53,8 +53,13 @@ node ./scripts/node/gen-manifest.mjs
 # zip that folder for handing off to another machine
 ./scripts/package-output.ps1 -Path ./out/box
 
-# smoke-test an assembled output folder
+# smoke-test an assembled output folder (file presence, not that it actually runs)
 ./scripts/verify-drive.ps1 -Path ./out/box
+
+# prove a box actually answers a question with zero network access (Docker,
+# --network none) -- requires Docker; assembles its own box, so run it standalone,
+# not against ./out/box
+./scripts/verify-offline.ps1 -Model qwen2.5-3b-instruct-q4
 
 # run the build wizard UI (dev machine only, http://127.0.0.1:5173)
 cd builder; npm run dev
