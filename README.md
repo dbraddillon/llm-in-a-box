@@ -14,6 +14,7 @@ Actively developed, pre-1.0 — expect rough edges and frequent changes. Full hi
 
 | Date | Change |
 |---|---|
+| 2026-08-30 | Scoped Raspberry Pi 5 support via QEMU emulation (no real hardware yet) — dependencies resolve and `llama-server` runs clean on stock Raspberry Pi OS. **Should work; not yet confirmed on real hardware.** Real-device test planned next week. |
 | 2026-08-29 | Fixed a real bug where an assembled box needed internet on its first question; added a permanent test (`verify-offline.ps1`) that proves it in a network-isolated Docker container instead of just trusting it |
 | 2026-08-28 | Added `.epub` support; closed all dependency security alerts; made the repo public |
 
@@ -113,16 +114,24 @@ npm run dev        # http://127.0.0.1:5173
 
 ## Where it's been tested
 
-As of 2026-08-28, the full pipeline — fetch model, fetch runtime, build a pack, load
-a drive, launch it from a path outside the repo, ask a real question, get a correctly
-sourced streamed answer — has been run end-to-end for real on all three target
-platforms:
+The full pipeline — fetch model, fetch runtime, build a pack, load a drive, launch it
+from a path outside the repo, ask a real question, get a correctly sourced streamed
+answer — has been run end-to-end for real on all three target platforms. Separately,
+since the whole point is running with **no network access**, "works" and "works
+genuinely offline" are tracked as two different claims below — a box that only ever
+ran on a networked dev machine hasn't actually proven the second one.
 
-| Platform | Status |
-|---|---|
-| Windows (win-x64) | ✅ verified |
-| Linux (linux-x64, Ubuntu) | ✅ verified |
-| macOS (macos-arm64, Apple Silicon) | ✅ verified |
+| Platform | Assemble + launch + chat | Confirmed offline (`--network none`) |
+|---|---|---|
+| Windows (win-x64) | ✅ verified | ✅ verified |
+| Linux (linux-x64, Ubuntu) | ✅ verified | ✅ verified |
+| macOS (macos-arm64, Apple Silicon) | ✅ verified | ⏳ not yet re-confirmed since the offline fix |
+| Raspberry Pi 5 (linux-arm64) | ⚠️ software-only, via QEMU emulation — no real hardware test yet | ⚠️ same caveat |
+
+Raspberry Pi row: dependencies resolve and `llama-server` runs clean on stock
+Raspberry Pi OS under emulation, so it *should* work — but emulation proves software
+correctness, not real-hardware inference speed or RAM pressure. Hardware's ordered;
+real test to follow.
 
 Only real content pack tested so far is the included one-file `survival-sample`
 smoke-test fixture — good for proving the pipeline works, not yet validated against a
