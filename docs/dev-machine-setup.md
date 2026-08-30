@@ -37,6 +37,35 @@ Checklist for Claude (or a human) picking this repo up on a new machine.
   the ThinkPad mini this section is nominally about): full pipeline including `pwsh`
   ran successfully there as of 2026-08-27/28. See "Cross-platform status" below.
 
+## Raspberry Pi 5 (8GB) — ordered 2026-08-30, not yet set up
+- [ ] Flash **the plain default Raspberry Pi OS** via Raspberry Pi Imager — no
+      non-Ubuntu/non-default detour needed. (An earlier pass here wrongly
+      recommended Ubuntu Server 24.04 based on a stale assumption about which
+      Debian release Raspberry Pi OS defaults to; corrected same day, see
+      `01-architecture.md`'s 2026-08-30 entry for the full story. Current default
+      is "Trixie," Debian 13, glibc 2.41 — confirmed via emulation that
+      `llama-server`'s release binary runs clean on it.)
+- [ ] `sudo apt install -y powershell` (or snap) for `pwsh`, same as the Ubuntu
+      section above — Raspberry Pi OS Trixie is Debian-based like the ThinkPad
+      mini's Ubuntu, so the same install path should apply; not yet confirmed on
+      real Pi hardware specifically.
+- [ ] `./scripts/fetch-runtime.ps1 -Platform linux-arm64` — already fetched and
+      verified once (via QEMU emulation, not on this real hardware) on the
+      win-x64 dev machine; the Windows tar.exe symlink-drop bug applies the same
+      way here as it did for linux-x64, already fixed in `fetch-runtime.ps1`, no
+      action needed.
+- [ ] `npm install` for `runtime/server` — confirmed via emulation that
+      `better-sqlite3`/`onnxruntime-node` have prebuilt aarch64-linux bindings, so
+      this shouldn't need build-essential/python3. Worth confirming for real
+      the first time it's run on actual hardware.
+- **Not yet confirmed on real hardware at all:** everything here is QEMU
+  emulation (`docker run --platform linux/arm64`) from the win-x64 machine, which
+  proves software correctness but not real inference speed or RAM pressure — see
+  `01-architecture.md`'s 2026-08-30 entry. First real task once this machine
+  exists: assemble + launch + real answered question (same bar as the other
+  three), then note actual tokens/sec and whether 8GB has comfortable headroom
+  with the model's default (uncapped, ~32k) context.
+
 ## Cross-platform status
 `fetch-runtime.ps1` and `load-drive.ps1` auto-detect the current platform
 (`Get-CurrentPlatform` in `_common.ps1`) and fetch/bundle the matching `llama-server`
