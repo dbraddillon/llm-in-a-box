@@ -288,7 +288,7 @@ a model this size.
   Docker's `--platform linux/arm64` cross-arch emulation (`docker buildx ls`
   confirmed it's already registered on this machine; `docker run --platform
   linux/arm64 ... uname -m` → `aarch64` confirms it's genuine, not just accepting
-  the flag). Two real findings, one good and one blocking:
+  the flag).
   - **`fetch-runtime.ps1 -Platform linux-arm64`** hit the identical Windows
     tar.exe symlink-drop bug as linux-x64 (see the entry above) — same fallback
     fixed it with no code changes needed; confirmed by inspecting
@@ -299,28 +299,29 @@ a model this size.
     under emulation** (`added 154 packages in 2m`, no compile errors) — confirms
     `better-sqlite3` and `onnxruntime-node` (pulled in via
     `@huggingface/transformers`) both ship prebuilt aarch64-linux native bindings.
-    This was the biggest software unknown before buying hardware: a Pi won't need
-    build-essential/python3/node-gyp or a slow from-source native-module compile.
-  - **Real blocker found: `llama-server`'s `bin-ubuntu-arm64` release binary
-    needs glibc >= 2.38** (`GLIBC_2.38`/`GLIBCXX_3.4.32` not found errors) — and
-    the **current default Raspberry Pi OS is Debian 12 "bookworm," glibc 2.36**.
-    Confirmed precisely: `node:20-bookworm-slim` (same Debian 12 base) reports
-    `glibc 2.36` via `ldd --version`; a bare `ubuntu:24.04` container reports
-    `glibc 2.39` and the identical `llama-server` binary runs clean there once
-    `libssl3`/`libgomp1` are installed (confirmed via `--version`). **Practical
-    upshot for buying/setting up a real Pi: install Ubuntu Server 24.04 LTS
-    (arm64) instead of the default Raspberry Pi OS** (officially supported via
-    Raspberry Pi Imager) — building llama.cpp from source on Raspberry Pi OS
-    would also work but is a slower, untested fallback if Ubuntu isn't wanted for
-    some other reason.
+    A Pi won't need build-essential/python3/node-gyp or a slow from-source
+    native-module compile.
+  - **`llama-server`'s `bin-ubuntu-arm64` release binary needs glibc >= 2.38**
+    (`GLIBC_2.38`/`GLIBCXX_3.4.32` not found errors under a Debian 12 "bookworm"
+    base, glibc 2.36). **First-pass conclusion here was wrong and got corrected
+    same session** — initially assumed bookworm was still the current default
+    Raspberry Pi OS and recommended installing Ubuntu Server 24.04 instead to
+    route around it. That assumption was stale: **Raspberry Pi OS moved to
+    "Trixie" (Debian 13) as its default in October 2025.** Checked Trixie
+    directly (`debian:trixie-slim`, arm64, emulated) — glibc 2.41, and the exact
+    same `llama-server` binary runs clean there once `libssl3`/`libgomp1` are
+    installed, no OS substitution needed. **Actual upshot: the plain default
+    Raspberry Pi OS via Raspberry Pi Imager just works** — no non-default OS
+    detour, the earlier Ubuntu recommendation was unnecessary. Worth remembering
+    the shape of the mistake, not just the correction: "current default" claims
+    about a fast-moving external project are exactly the kind of thing that goes
+    stale between training data and now and need checking, not assuming, before
+    they inform a real purchase/setup decision.
   **Not yet confirmed:** the full stack (Node server + llama-server together,
-  real `/api/chat` query, `--network none`) on the corrected Ubuntu 24.04 base —
-  attempted, but NodeSource's Node 20 install combined with `apt-get` under QEMU
-  emulation was impractically slow (each `apt-get` step alone ran 40–100+ seconds
-  translated) and hit tooling timeouts before completing. The two halves are each
-  independently confirmed (Node/npm stack on the bookworm base above; llama-server
-  on the glibc-corrected Ubuntu base here) but not yet combined in one container.
-  Also not addressed by emulation at all: real inference speed/RAM pressure on
-  actual Pi silicon — QEMU proves software correctness, not hardware performance.
-  Re-run once real Pi hardware exists, or push through the slow NodeSource install
-  under emulation if a fully combined pre-hardware pass is wanted first.
+  real `/api/chat` query, `--network none`) in one container on a Trixie base —
+  each half is independently confirmed (Node/npm stack on bookworm above,
+  `llama-server` on Trixie here) but not yet combined in a single pass; ran out
+  of a reasonable time budget under QEMU emulation's overhead before finishing
+  that combination. Also, emulation only proves software correctness, not real
+  inference speed or RAM pressure on actual Pi silicon — that part still needs
+  the hardware once it exists.
