@@ -85,6 +85,16 @@ under the fix. See `docs/01-architecture.md`'s dated entry for the full story,
 including a second unrelated bug the same test caught (a Windows-cross-fetched Linux
 runtime was silently missing shared libraries).
 
+**2026-08-30 addendum — Raspberry Pi scoped, not yet real-hardware-tested:** before
+buying a Pi, used Docker's `--platform linux/arm64` QEMU emulation to check the
+linux-arm64 path. Confirmed `better-sqlite3`/`onnxruntime-node` have prebuilt
+aarch64-linux bindings and `llama-server` runs clean on stock Raspberry Pi OS
+("Trixie," Debian 13). A first-pass recommendation to install Ubuntu Server instead
+was wrong — based on stale knowledge that Raspberry Pi OS still defaults to Debian
+12; it moved to Trixie in October 2025 — corrected same session. Pi 5 (8GB) ordered;
+real hardware test still pending. Full detail: `docs/01-architecture.md`'s
+2026-08-30 entry, setup checklist in `docs/dev-machine-setup.md`.
+
 See `docs/01-architecture.md` for exactly what's been tested vs. what's still
 missing (reranking, a real content pack instead of the smoke-test fixture, etc.), and
 `docs/content-sourcing.md` before pointing a pack at content you don't have rights to.
