@@ -6,7 +6,7 @@
     "start": "node index.mjs"
   },
   "dependencies": {
-    "express": "^4.19.0",
+    "express": "^5.2.1",
     "better-sqlite3": "^11.3.0",
     "@huggingface/transformers": "^4.2.0"
   },
